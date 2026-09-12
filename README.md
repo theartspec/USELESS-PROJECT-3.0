@@ -33,10 +33,32 @@ For Software:
 ### Implementation
 For Software:
 # Installation
-[]
+backend
+[python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r backend\requirements.txt]
+
+frontend
+[cd frontend
+npm install
+cd ..]
+
+configure gemini api
+create/open: 
+[backend/.env
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-2.5-flash
+PORT=8000
+DEBUG=True
 
 # Run
-[commands]
+Backend
+[.\.venv\Scripts\activate
+python -m uvicorn backend.main:app --reload --port 8000]
+
+frontend
+[cd frontend
+npm run dev]
 
 ### Project Documentation
 For Software:
@@ -50,6 +72,7 @@ For Software:
 
 [<img width="1906" height="978" alt="Actual Response" src="https://github.com/user-attachments/assets/36f679dc-7a4a-4d3f-b1e1-eb2f9912b7c5" />]
 
+![<img width="1917" height="952" alt="image" src="https://github.com/user-attachments/assets/3a8166cd-8d76-41ca-a97d-11671660055a" />]
 
 **
 

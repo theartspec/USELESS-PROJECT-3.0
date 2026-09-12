@@ -77,45 +77,8 @@ For Software:
 **
 
 # Diagrams
-![       USER
-                     │
-                     ▼
-                ASK QUESTION
-                     │
-                     ▼
-             ┌───────────────┐
-             │ Python Engine │
-             └───────┬───────┘
-                     │
-               Choose behavior
-                     │
-       ┌─────────────┼──────────────┐
-       ▼             ▼              ▼
-    ANSWER       RAGEBAIT         GAME
-       │             │              │
-       │             │       Choose game
-       │             │              │
-       │             │     ┌────────┼────────┐
-       │             │     ▼        ▼        ▼
-       │             │   TIC     BUBBLE    MATH
-       │             │    TAC     SHOOT
-       │             │     │
-       │             │     └───────┬────────┘
-       │             │             │
-       │             │          GAME END
-       │             │             │
-       │             │       ┌─────┴─────┐
-       │             │       ▼           ▼
-       │             │     WIN          LOSE
-       │             │       │           │
-       └─────────────┴───────┘           │
-                     │                   │
-                     ▼                   ▼
-               CALL GEMINI          Ragebait again
-                     │
-                     ▼
-              ACTUAL ANSWER]
-**
+![<img width="425" height="682" alt="image" src="https://github.com/user-attachments/assets/18dcd224-34d1-4964-a214-82691cf89848" />]
+
 
 
 

@@ -24,17 +24,19 @@ const COLORS = ['#fb7185', '#38bdf8', '#facc15', '#4ade80', '#c084fc'];
 export const BubbleShooterGame: React.FC<BubbleShooterProps> = ({
   sessionId,
   challengeId,
-  targetScore = 200,
-  timeLimit = 30,
+  targetScore = 500,
+  timeLimit = 45,
   isAngry: _isAngry = false,
   onWin,
   onFail
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [score, setScore] = useState<number>(0);
+  const scoreRef = useRef<number>(0);
   const [timeLeft, setTimeLeft] = useState<number>(timeLimit);
   const [gameOver, setGameOver] = useState<boolean>(false);
   const [isPaused, setIsPaused] = useState<boolean>(false);
+  const [isWonCelebrating, setIsWonCelebrating] = useState<boolean>(false);
 
   const bubblesRef = useRef<Bubble[]>([]);
   const shooterRef = useRef<{
@@ -69,9 +71,11 @@ export const BubbleShooterGame: React.FC<BubbleShooterProps> = ({
       }
     }
     bubblesRef.current = bubbles;
+    scoreRef.current = 0;
     setScore(0);
     setTimeLeft(timeLimit);
     setGameOver(false);
+    setIsWonCelebrating(false);
   }, [timeLimit]);
 
   useEffect(() => {
@@ -94,21 +98,21 @@ export const BubbleShooterGame: React.FC<BubbleShooterProps> = ({
     }
   }, [sessionId, challengeId, targetScore, onWin, onFail]);
 
-  // Timer
+  // Timer - steady countdown without tearing down on every score update
   useEffect(() => {
-    if (gameOver || isPaused) return;
+    if (gameOver || isPaused || isWonCelebrating) return;
     const interval = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(interval);
-          handleEndGame(score);
+          handleEndGame(scoreRef.current);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [gameOver, isPaused, score, handleEndGame]);
+  }, [gameOver, isPaused, isWonCelebrating, handleEndGame]);
 
   // Canvas render loop
   useEffect(() => {
@@ -198,14 +202,19 @@ export const BubbleShooterGame: React.FC<BubbleShooterProps> = ({
           if (matchingNeighbors.length >= 1) {
             sound.playBubblePop();
             matchingNeighbors.forEach(m => (m.active = false));
-            const points = (matchingNeighbors.length + 1) * 60;
-            setScore(prev => {
-              const next = prev + points;
-              if (next >= targetScore && !gameOver) {
-                setTimeout(() => handleEndGame(next), 300);
-              }
-              return next;
-            });
+            // Realistic point pacing
+            const points = matchingNeighbors.length === 1 ? 50 : (matchingNeighbors.length + 1) * 35;
+            const nextScore = scoreRef.current + points;
+            scoreRef.current = nextScore;
+            setScore(nextScore);
+
+            if (nextScore >= targetScore && !gameOver && !isWonCelebrating) {
+              setIsWonCelebrating(true);
+              sound.playVictory();
+              setTimeout(() => {
+                handleEndGame(nextScore);
+              }, 1200);
+            }
           } else {
             bubblesRef.current.push(newBubble);
           }
@@ -305,6 +314,44 @@ export const BubbleShooterGame: React.FC<BubbleShooterProps> = ({
           ⏱️ TIME: {timeLeft}s
         </div>
       </div>
+
+      {/* Target Progress Bar */}
+      <div style={{ width: '100%', maxWidth: 340 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', fontWeight: 700, color: '#1e1b2e', marginBottom: 3 }}>
+          <span>PROGRESS</span>
+          <span>{score} / {targetScore} PTS</span>
+        </div>
+        <div style={{ height: 9, background: '#e5e7eb', borderRadius: 6, overflow: 'hidden', border: '2px solid #1e1b2e' }}>
+          <div
+            style={{
+              height: '100%',
+              width: `${Math.min(100, Math.round((score / targetScore) * 100))}%`,
+              background: 'linear-gradient(90deg, #f59e0b, #10b981)',
+              transition: 'width 0.25s ease'
+            }}
+          />
+        </div>
+      </div>
+
+      {/* In-Game Victory Banner */}
+      {isWonCelebrating && (
+        <div
+          style={{
+            background: '#dcfce7',
+            border: '2px solid #16a34a',
+            borderRadius: 10,
+            padding: '6px 14px',
+            fontSize: '0.85rem',
+            fontWeight: 800,
+            color: '#15803d',
+            textAlign: 'center',
+            width: '100%',
+            maxWidth: 340
+          }}
+        >
+          🎉 TARGET CONQUERED ({score} PTS)! UNLOCKING ANSWER...
+        </div>
+      )}
 
       {/* Bubble Canvas Frame */}
       <div

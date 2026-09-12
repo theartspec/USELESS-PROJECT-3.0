@@ -32,7 +32,8 @@ async def start_game(req: GameStartRequest):
 
     # Use existing original_question or create placeholder
     orig_q = session.original_question or "Why is the sky blue?"
-    challenge = game_service.create_challenge(req.session_id, orig_q, game_type)
+    is_angry = (session.current_mood == "angry")
+    challenge = game_service.create_challenge(req.session_id, orig_q, game_type, is_angry=is_angry)
     session.active_challenge = challenge
 
     game_state = {}

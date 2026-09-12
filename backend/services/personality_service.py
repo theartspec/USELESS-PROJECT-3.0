@@ -63,14 +63,15 @@ class PersonalityService:
         question: str,
         current_mood: str,
         turns_count: int,
-        active_challenge_exists: bool
+        active_challenge_exists: bool,
+        challenge_failed: bool = False
     ) -> Dict[str, Any]:
         """
         Interaction-driven decision engine:
         1. Begging detection (English & Manglish) with begging level verification.
-        2. Guaranteed Gemini 2.5 Flash factual answer after 2, 3, or 4 turns!
-        3. Dynamic mood evolution (no manual mode picker).
-        4. High-difficulty games when angry.
+        2. Guards against unlocking answers when game is active or failed.
+        3. Delivers actual factual Gemini answer after sufficient ragebait turns or accepted begging.
+        4. Dynamic mood evolution and difficulty.
         """
         lower_q = question.lower()
         
@@ -93,7 +94,6 @@ class PersonalityService:
         is_begging, beg_score, is_asking_permission, matched_str = self.analyze_begging(question)
         if is_begging:
             if is_asking_permission or beg_score < 2:
-                # Weak begging or asking permission -> Demand more humiliating begging
                 demand_msg = (
                     "Beg? You really think that barely-there attempt counts as begging? "
                     "Put some real emotion into it! Say 'please' with feeling or hit me with a proper 'onn tharuvo'!"
@@ -107,26 +107,38 @@ class PersonalityService:
                     "is_angry": False
                 }
             else:
-                # Sufficient begging (score >= 2 e.g. "sorry, please onn tharuvo") -> Relent and deliver Gemini answer!
                 return {
                     "behavior": BehaviorType.BEGGING_REACTION.value,
                     "mood": MoodType.NEUTRAL.value,
                     "status": "ACCEPTED",
                     "begging_score": beg_score,
-                    "message": "Aww, look at you... so desperate! Sheri sheri, since you begged so nicely ('onn tharuvo' touched my circuits), here is your Gemini 2.5 Flash researched answer:",
+                    "message": "Aww, look at you... so desperate! Sheri sheri, since you begged so nicely ('onn tharuvo' touched my circuits), here is your verified Gemini answer:",
                     "is_angry": False
                 }
 
-        # 3. Delivery of actual factual answer after 2, 3, or 4 turns:
-        # - Turn >= 4: 100% guarantee
-        # - Turn == 3: 75% chance
-        # - Turn == 2: 40% chance
+        # 3. Active challenge enforcement (Cannot bypass without winning or begging)
+        if active_challenge_exists:
+            return {
+                "behavior": BehaviorType.RAGEBAIT.value,
+                "mood": MoodType.RAGEBAIT.value,
+                "message": "Hey! You haven't finished your game challenge yet! Win the game or beg for mercy to unlock your answer!",
+                "is_angry": (current_mood == MoodType.ANGRY.value)
+            }
+
+        # 4. Failed challenge enforcement (Cannot get answer if game was lost!)
+        if challenge_failed:
+            return {
+                "behavior": BehaviorType.RAGEBAIT.value,
+                "mood": MoodType.SARCASTIC.value if hasattr(MoodType, "SARCASTIC") else MoodType.TAUNTING.value,
+                "message": "Nice try! You lost the challenge! The answer remains locked behind the highscore vault. Beat the game, or beg me sincerely ('please' or 'onn tharuvo')!",
+                "is_angry": (current_mood == MoodType.ANGRY.value)
+            }
+
+        # 5. Delivery of actual factual answer only after 3+ turns of banter/ragebait (no active/failed challenge)
         deliver_answer = False
         if turns_count >= 4:
             deliver_answer = True
-        elif turns_count == 3 and random.random() < 0.75:
-            deliver_answer = True
-        elif turns_count == 2 and random.random() < 0.40:
+        elif turns_count >= 3 and random.random() < 0.80:
             deliver_answer = True
 
         if deliver_answer:
@@ -135,15 +147,6 @@ class PersonalityService:
                 "mood": MoodType.NEUTRAL.value,
                 "game": None,
                 "is_angry": False
-            }
-
-        # 4. Active challenge reminder
-        if active_challenge_exists:
-            return {
-                "behavior": BehaviorType.RAGEBAIT.value,
-                "mood": MoodType.RAGEBAIT.value,
-                "message": "Hey! You haven't finished your previous challenge yet! Finish it or surrender before asking more questions!",
-                "is_angry": (current_mood == MoodType.ANGRY.value)
             }
 
         # 5. Natural Mood Evolution

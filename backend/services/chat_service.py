@@ -41,13 +41,18 @@ class ChatService:
             session.active_challenge is not None
             and session.active_challenge.status == ChallengeStatus.ACTIVE
         )
+        chal_failed = (
+            session.active_challenge is not None
+            and session.active_challenge.status == ChallengeStatus.FAILED
+        )
 
         # Decide behavior via personality engine
         decision = personality_service.decide_behavior(
             question=clean_msg,
             current_mood=session.current_mood,
             turns_count=session.turns_count,
-            active_challenge_exists=has_active_chal
+            active_challenge_exists=has_active_chal,
+            challenge_failed=chal_failed
         )
 
         behavior = decision["behavior"]
@@ -105,11 +110,12 @@ class ChatService:
             if status == "ACCEPTED":
                 # Begging verified and accepted! Reward user with the Gemini researched answer
                 target_q = session.original_question or clean_msg
-                actual_answer = await gemini_service.generate_actual_answer(target_q)
+                actual_answer = await gemini_service.generate_actual_answer(target_q, session_id=session.session_id)
                 full_reply = f"{beg_msg}\n\n{actual_answer}"
                 session.conversation_history.append(
                     ConversationTurn(role="assistant", type="answer", content=full_reply, mood=mood)
                 )
+                session.active_challenge = None
                 session.turns_count = 0  # Reset for next question
                 return ChatResponse(
                     type="answer",
@@ -160,7 +166,9 @@ class ChatService:
 
         # 5. RAGEBAIT BEHAVIOR (Dynamic via Gemini)
         elif behavior == BehaviorType.RAGEBAIT.value:
-            dialogue = await gemini_service.generate_personality_dialogue(mood, "ragebait", clean_msg)
+            dialogue = decision.get("message")
+            if not dialogue:
+                dialogue = await gemini_service.generate_personality_dialogue(mood, "ragebait", clean_msg, session_id=session.session_id)
             if not dialogue or not dialogue.strip():
                 dialogue = "Why should I answer that for you? Entertain me first!"
             session.conversation_history.append(
@@ -175,7 +183,7 @@ class ChatService:
 
         # 6. ASK_BACK BEHAVIOR
         elif behavior == BehaviorType.ASK_BACK.value:
-            dialogue = await gemini_service.generate_personality_dialogue(mood, "ask_back", clean_msg)
+            dialogue = await gemini_service.generate_personality_dialogue(mood, "ask_back", clean_msg, session_id=session.session_id)
             if not dialogue or not dialogue.strip():
                 dialogue = "Why do you want to know? What is your secret agenda?"
             session.conversation_history.append(
@@ -190,7 +198,7 @@ class ChatService:
 
         # 7. REFUSE BEHAVIOR
         elif behavior == BehaviorType.REFUSE.value:
-            dialogue = await gemini_service.generate_personality_dialogue(mood, "refusal", clean_msg)
+            dialogue = await gemini_service.generate_personality_dialogue(mood, "refusal", clean_msg, session_id=session.session_id)
             if not dialogue or not dialogue.strip():
                 dialogue = "Access Denied. Reason: I simply don't feel like answering that."
             session.conversation_history.append(
@@ -203,16 +211,17 @@ class ChatService:
                 character_state=CharacterState.ANGRY.value
             )
 
-        # 8. DIRECT FACTUAL ANSWER BEHAVIOR (Triggered after 2, 3, or 4 turns)
+        # 8. DIRECT FACTUAL ANSWER BEHAVIOR (Triggered after sufficient banter/tests)
         else:
             target_q = session.original_question or clean_msg
-            actual_answer = await gemini_service.generate_actual_answer(target_q)
-            personality_wrap = "Alright, alright! You've persisted through my games and tests. Here is your actual answer from Gemini 2.5 Flash:"
+            actual_answer = await gemini_service.generate_actual_answer(target_q, session_id=session.session_id)
+            personality_wrap = "Alright, alright! You've persisted through my games and tests. Here is your verified answer from Gemini:"
             full_reply = f"{personality_wrap}\n\n{actual_answer}"
             session.conversation_history.append(
                 ConversationTurn(role="assistant", type="answer", content=full_reply, mood=mood)
             )
-            # Reset turn counter for fresh topic
+            # Reset turn counter and clear challenge for fresh topic
+            session.active_challenge = None
             session.turns_count = 0
             return ChatResponse(
                 type="answer",

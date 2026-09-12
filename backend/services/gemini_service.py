@@ -22,76 +22,99 @@ def get_genai_client():
 class GeminiService:
     def __init__(self):
         self.preferred_models = [
-            settings.GEMINI_MODEL or "gemini-2.5-flash",
-            "gemini-3.6-flash",
-            "gemini-flash-latest"
+            settings.GEMINI_MODEL or "gemini-3.5-flash-lite",
+            "gemini-3.5-flash",
+            "gemini-3.1-flash-lite-preview"
         ]
+        self.chats: Dict[str, Any] = {}
 
-    def _generate_with_fallback(self, client, contents):
-        last_error = None
-        for model_name in self.preferred_models:
-            try:
-                resp = client.models.generate_content(
-                    model=model_name,
-                    contents=contents
-                )
-                if resp and resp.text:
-                    return resp.text.strip()
-            except Exception as e:
-                last_error = e
-                logger.warning(f"Gemini call to {model_name} failed: {e}. Trying fallback...")
-        if last_error:
-            raise last_error
-        return None
+    def get_or_create_chat(self, session_id: str):
+        client = get_genai_client()
+        if not client:
+            return None
+        if session_id not in self.chats:
+            for model_name in self.preferred_models:
+                try:
+                    chat = client.aio.chats.create(model=model_name)
+                    self.chats[session_id] = chat
+                    logger.info(f"Created Gemini multi-turn chat session for {session_id} using {model_name}")
+                    return chat
+                except Exception as e:
+                    logger.warning(f"Could not create chat with model {model_name}: {e}")
+            return None
+        return self.chats.get(session_id)
 
-    async def generate_actual_answer(self, question: str, context: Optional[List[Dict[str, str]]] = None) -> str:
+    async def generate_actual_answer(self, question: str, session_id: Optional[str] = None) -> str:
         """
         FR-014, FR-021:
         Directly address original question, factually useful, explain concepts clearly.
-        No unnecessary personality interference inside the factual answer.
+        Maintains conversational memory using Gemini multi-turn chat sessions.
         """
         client = get_genai_client()
         if client:
-            try:
-                system_prompt = (
-                    "You are a helpful, brilliant, and precise factual assistant acting as Gemini Flash. "
-                    "Provide a direct, accurate, and engaging explanation for the user's question. "
-                    "Do not use sarcasm or snark in this explanation; provide high quality information. "
-                    "Keep your answer informative yet concise (1-3 paragraphs)."
-                )
-                prompt = f"User Question: {question}"
-                res_text = self._generate_with_fallback(client, [system_prompt, prompt])
-                if res_text:
-                    return res_text
-            except Exception as e:
-                logger.error(f"Gemini API error during generate_actual_answer: {e}")
+            # 1. Try multi-turn chat session with memory if session_id provided
+            if session_id:
+                chat = self.get_or_create_chat(session_id)
+                if chat:
+                    try:
+                        prompt = (
+                            f"Context: The user previously asked: '{question}'. "
+                            f"Now provide a direct, comprehensive, accurate, and engaging explanation for this question as Google Gemini. "
+                            f"Do not use sarcasm or snark in this explanation; provide top-tier factual, informative, well-formatted explanation with clear insights (1-3 paragraphs)."
+                        )
+                        resp = await chat.send_message(prompt)
+                        if resp and resp.text:
+                            return resp.text.strip()
+                    except Exception as e:
+                        logger.warning(f"Error in chat.send_message for {session_id}: {e}. Falling back to direct generation...")
+
+            # 2. Async direct generation with fallback across models
+            for model_name in self.preferred_models:
+                try:
+                    system_prompt = (
+                        "You are a helpful, brilliant, and precise factual assistant acting as Google Gemini. "
+                        "Provide a direct, accurate, and engaging explanation for the user's question. "
+                        "Do not use sarcasm or snark in this explanation; provide high quality information with clean markdown formatting. "
+                        "Keep your answer informative yet concise (1-3 paragraphs)."
+                    )
+                    resp = await client.aio.models.generate_content(
+                        model=model_name,
+                        contents=[system_prompt, f"User Question: {question}"]
+                    )
+                    if resp and resp.text:
+                        return resp.text.strip()
+                except Exception as e:
+                    logger.warning(f"Gemini generate_actual_answer with {model_name} failed: {e}")
 
         # Intelligent and factually rich curated fallback if API key is not configured or offline
         return self._generate_fallback_answer(question)
 
-    async def generate_personality_dialogue(self, mood: str, prompt_type: str, context: str = "") -> str:
+    async def generate_personality_dialogue(self, mood: str, prompt_type: str, context: str = "", session_id: Optional[str] = None) -> str:
         """
-        Generates Vadakkunokki's sassy dialogue using Gemini or personality bank.
-        Crafts varied, creative question-specific responses.
+        Generates Vadakkunokki's sassy dialogue using fast asynchronous Gemini calls.
         """
         client = get_genai_client()
         if client:
-            try:
-                sys_instruction = (
-                    "You are 'Vadakkunokki', a mischievous, unpredictable, snarky retro-arcade AI character. "
-                    f"Your current mood is: {mood.upper()}. "
-                    f"Response mode: {prompt_type.upper()}. "
-                    "The user just asked or said: " + (context or "something trivial") + ". "
-                    "Generate a single, short (1-2 sentences), hilarious, creative response that DIRECTLY and specifically mocks, teases, or challenges their question. "
-                    "Preferred standard is English, but you can occasionally sprinkle light, humorous Manglish flavor ('onn tharuvo', 'ente ponno', 'shari shari') if relevant to begging or taunting. "
-                    "If response mode is WON_WRAPPER, give genuine praise for solving the game, acknowledging their skill, and proudly introducing the Gemini 2.5 Flash researched answer. "
-                    "Do not use quotes in output."
-                )
-                res_text = self._generate_with_fallback(client, sys_instruction)
-                if res_text:
-                    return res_text.replace('"', '')
-            except Exception as e:
-                logger.warning(f"Gemini dialogue generation fallback due to: {e}")
+            sys_instruction = (
+                "You are 'Vadakkunokki', a mischievous, unpredictable, snarky retro-arcade AI character. "
+                f"Your current mood is: {mood.upper()}. "
+                f"Response mode: {prompt_type.upper()}. "
+                "The user just asked or said: " + (context or "something trivial") + ". "
+                "Generate a single, short (1-2 sentences max), hilarious, creative response that DIRECTLY and specifically mocks, teases, or challenges their question. "
+                "Preferred standard is English, with occasional light, humorous Manglish flavor ('onn tharuvo', 'ente ponno', 'shari shari') if relevant to begging or taunting. "
+                "If response mode is WON_WRAPPER, give genuine praise for solving the game, acknowledging their skill, and proudly introducing the verified Gemini answer. "
+                "Do not use quotes in output."
+            )
+            for model_name in self.preferred_models:
+                try:
+                    resp = await client.aio.models.generate_content(
+                        model=model_name,
+                        contents=sys_instruction
+                    )
+                    if resp and resp.text:
+                        return resp.text.strip().replace('"', '')
+                except Exception as e:
+                    logger.warning(f"Gemini personality dialogue with {model_name} failed: {e}")
 
         return self._fallback_dialogue(mood, prompt_type)
 
@@ -101,31 +124,32 @@ class GeminiService:
         """
         client = get_genai_client()
         if client:
-            try:
-                prompt = (
-                    "Generate a 3-question multiple choice science quiz across physics, astronomy, chemistry, or biology. "
-                    "Return ONLY valid JSON in this exact structure without markdown backticks:\n"
-                    "[\n"
-                    '  {"question": "...", "options": ["A", "B", "C", "D"], "correct_index": 0, "explanation": "..."},\n'
-                    '  {"question": "...", "options": ["A", "B", "C", "D"], "correct_index": 1, "explanation": "..."},\n'
-                    '  {"question": "...", "options": ["A", "B", "C", "D"], "correct_index": 2, "explanation": "..."}\n'
-                    "]"
-                )
-                response = client.models.generate_content(
-                    model=self.model,
-                    contents=prompt
-                )
-                if response and response.text:
-                    text = response.text.strip()
-                    if text.startswith("```"):
-                        text = text.split("```")[1]
-                        if text.startswith("json"):
-                            text = text[4:]
-                    quiz_data = json.loads(text.strip())
-                    if isinstance(quiz_data, list) and len(quiz_data) == 3:
-                        return quiz_data
-            except Exception as e:
-                logger.warning(f"Failed to generate Gemini science quiz, using curated set: {e}")
+            prompt = (
+                "Generate a 3-question multiple choice science quiz across physics, astronomy, chemistry, or biology. "
+                "Return ONLY valid JSON in this exact structure without markdown backticks:\n"
+                "[\n"
+                '  {"question": "...", "options": ["A", "B", "C", "D"], "correct_index": 0, "explanation": "..."},\n'
+                '  {"question": "...", "options": ["A", "B", "C", "D"], "correct_index": 1, "explanation": "..."},\n'
+                '  {"question": "...", "options": ["A", "B", "C", "D"], "correct_index": 2, "explanation": "..."}\n'
+                "]"
+            )
+            for model_name in self.preferred_models:
+                try:
+                    resp = await client.aio.models.generate_content(
+                        model=model_name,
+                        contents=prompt
+                    )
+                    if resp and resp.text:
+                        text = resp.text.strip()
+                        if text.startswith("```"):
+                            text = text.split("```")[1]
+                            if text.startswith("json"):
+                                text = text[4:]
+                        quiz_data = json.loads(text.strip())
+                        if isinstance(quiz_data, list) and len(quiz_data) == 3:
+                            return quiz_data
+                except Exception as e:
+                    logger.warning(f"Failed to generate Gemini science quiz with {model_name}: {e}")
 
         return self._curated_science_quiz()
 

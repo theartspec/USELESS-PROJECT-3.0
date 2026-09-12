@@ -31,14 +31,16 @@ async def unlock_answer(req: AnswerUnlockRequest):
     if not original_question:
         original_question = "What is the secret of life?"
 
-    # Generate factual answer via Gemini
-    actual_answer = await gemini_service.generate_actual_answer(original_question)
-
-    # Generate personality wrapper
-    personality_msg = await gemini_service.generate_personality_dialogue(
-        mood=session.current_mood,
-        prompt_type="won_wrapper",
-        context=f"The user won the game and proved themselves for: '{original_question}'"
+    import asyncio
+    # Concurrently generate factual answer and personality wrapper with session memory
+    actual_answer, personality_msg = await asyncio.gather(
+        gemini_service.generate_actual_answer(question=original_question, session_id=req.session_id),
+        gemini_service.generate_personality_dialogue(
+            mood=session.current_mood,
+            prompt_type="won_wrapper",
+            context=f"The user won the game and proved themselves for: '{original_question}'",
+            session_id=req.session_id
+        )
     )
 
     # Mark session state

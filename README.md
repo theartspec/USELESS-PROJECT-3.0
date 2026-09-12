@@ -1,118 +1,111 @@
-# Vadakkunokki.ai (വടക്കുനോക്കി.ai)
+<img width="1280" height="640" alt="git (1)" src="https://github.com/user-attachments/assets/8920b256-2ba8-4988-b824-5351134eb4bd" />
 
-> **"THE AI KNOWS THE ANSWER. THE AI CHOOSES WHETHER YOU DESERVE IT."**
 
-Vadakkunokki.ai is an interactive retro-gaming AI web application built with **FastAPI** (Python) and **React + TypeScript + Vite**. Powered by **Google Gemini**, the AI behaves like a mischievous, unpredictable, mood-driven retro-game character that intentionally ragebaits, refuses, challenges, annoys, or entertains the user before eventually providing the correct answer.
 
----
+# [VADAKKUNOKKI AI] 🎯
 
-## 🎮 Core Gameplay & Mechanics
 
-1. **Ask Any Question**: The user enters a question (e.g. *"What is the largest planet?"*).
-2. **Authoritative Decision Engine**: Vadakkunokki evaluates the question and its mood across 8 behaviors:
-   - `START_GAME`: Triggers one of 4 retro mini-games.
-   - `RAGEBAIT`: Sassy, hilarious taunts refusing to do your homework.
-   - `ASK_BACK`: Questions the user's secret motives.
-   - `REFUSE`: Playful, witty refusal.
-   - `DELETE_INPUT`: In angry mode, progressively erases user input with backspacing sounds!
-   - `SILENT`: Stares blankly without an answer.
-   - `ANSWER`: Direct factual response when in a rare generous mood.
-3. **Original Question Preservation (FR-007)**: When a challenge is triggered, the original question is permanently preserved.
-4. **Answer Unlocking (FR-013, FR-030)**: Winning the mini-game unlocks the answer. Vadakkunokki delivers a reluctant concession wrapped around Google Gemini's verified factual explanation.
+## Basic Details
+### Team Name: [Pixel Rift]
 
----
 
-## 🕹️ The 4 Modular Mini-Games
+### Team Members
+- Team Lead: [Anu Ann Biju] - [Toc H Institute of science and Technology]
+- Member 2: [Adheena Sajeev Nair] - [Toc H Institute of science and Technology]
 
-- **Tic-Tac-Toe**: Interactive 3×3 grid with server-side AI moves and win verification.
-- **Bubble Shooter**: Canvas arcade shooter with aiming cannon, colored bubbles, timer, and score target.
-- **Speed Math**: Rapid-fire arithmetic equations with server-validated answers and timer.
-- **Science Quiz**: 3-question scientific gauntlet requiring a perfect 3/3 score.
 
----
+### Project Description
+[How's does it sound if that arrogant topper in your class became an LLM. Apart from other LLMs like Chat GPT, VADAKKUNOKI AI, knows the answer, but he wants you to earn the answer. Too Smart?? it will roast you, or try playing a game, earn the answer.]
 
-## 🏗️ Project Architecture
+### The Problem (that doesn't exist)
+[Deliberating prompting in an LLM doesn't feel thrilling, So why not an LLM that challenges you for an answer]
 
-```
-uselessproject/
-├── backend/
-│   ├── config.py             # Centralized Pydantic settings
-│   ├── main.py               # FastAPI application entry point
-│   ├── requirements.txt      # Python dependencies
-│   ├── games/                # Modular mini-game logic
-│   │   ├── tic_tac_toe.py
-│   │   ├── bubble_shooter.py
-│   │   ├── speed_math.py
-│   │   └── science_quiz.py
-│   ├── models/               # Pydantic schemas (chat, games, session)
-│   ├── routes/               # API endpoints (/chat, /game, /challenge, /session)
-│   ├── services/             # Gemini, Mood, Personality, and Game services
-│   ├── utils/                # Redacted logging & helper functions
-│   └── tests/                # Comprehensive Pytest suite
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/       # VadakkunokkiAvatar, LandingView, ChatView, ExitModal
-│   │   ├── components/games/ # GameModal, TicTacToe, BubbleShooter, SpeedMath, ScienceQuiz, VictoryModal
-│   │   ├── services/         # API client & Web Audio 8-bit sound synthesizer
-│   │   ├── App.tsx           # App root & state coordinator
-│   │   └── index.css         # Custom Vanilla CSS retro-gaming design system
-│   ├── package.json
-│   └── vite.config.ts
-│
-├── run.bat                   # 1-click startup script for Windows
-└── README.md
-```
+### The Solution (that nobody asked for)
+[Deliberating prompting in an LLM doesn't feel thrilling, We build an LLM that Rage baits you or give you a task in order to earn your answer]
+## Technical Details
+### Technologies/Components Used
+For Software:
+- [Python 3,J.SON, React 19, TypeScript, vite 8, google fonts, lucide react, web audio API]
+- [Fast API, React 19]
+- [lucide react, canvas -confetti, type/canvas -confetti,web audio API, google-genai,pydantic, pydantic -settings, python dotenv, uvicorn[standard], pytest]
+- [vite, node.js & npm, TYpeScript,oxlint, .venv, pip,FAST API swagger/open api ]
 
----
+### Implementation
+For Software:
+# Installation
+[]
 
-## 🚀 Quick Start Guide
+# Run
+[commands]
 
-### 1. Configure Environment
-Open `backend/.env` and add your Google Gemini API key:
-```env
-GEMINI_API_KEY=your_gemini_api_key_here
-GEMINI_MODEL=gemini-2.5-flash
-PORT=8000
-DEBUG=True
-```
-*(Note: If no key is configured, high quality curated factual fallbacks automatically keep the game fully functional!)*
+### Project Documentation
+For Software:
 
-### 2. Run the App
+# Screenshots (Add at least 3)
+![<img width="1856" height="986" alt="Home interface" src="https://github.com/user-attachments/assets/f675fabe-00c5-481e-937d-5a3afd8dfa26" />]
 
-#### Windows (One-Click)
-Double click `run.bat` or run in terminal:
-```cmd
-run.bat
-```
+![<img width="1480" height="953" alt="Game interface 2" src="https://github.com/user-attachments/assets/c286d06d-06fd-41af-89b7-29523a438633" />]
 
-#### Manual Run
-**Terminal 1 (Backend):**
-```bash
-.\.venv\Scripts\activate
-python -m uvicorn backend.main:app --reload --port 8000
-```
+![<img width="1906" height="973" alt="Game interface 1" src="https://github.com/user-attachments/assets/51e2cea6-d3b7-4464-802d-cfec74180f5e" />]
 
-**Terminal 2 (Frontend):**
-```bash
-cd frontend
-npm run dev
-```
+[<img width="1906" height="978" alt="Actual Response" src="https://github.com/user-attachments/assets/36f679dc-7a4a-4d3f-b1e1-eb2f9912b7c5" />]
 
-Visit **http://localhost:5173** in your browser!  
-FastAPI Swagger Docs available at **http://127.0.0.1:8000/docs**.
+
+**
+
+# Diagrams
+![       USER
+                     │
+                     ▼
+                ASK QUESTION
+                     │
+                     ▼
+             ┌───────────────┐
+             │ Python Engine │
+             └───────┬───────┘
+                     │
+               Choose behavior
+                     │
+       ┌─────────────┼──────────────┐
+       ▼             ▼              ▼
+    ANSWER       RAGEBAIT         GAME
+       │             │              │
+       │             │       Choose game
+       │             │              │
+       │             │     ┌────────┼────────┐
+       │             │     ▼        ▼        ▼
+       │             │   TIC     BUBBLE    MATH
+       │             │    TAC     SHOOT
+       │             │     │
+       │             │     └───────┬────────┘
+       │             │             │
+       │             │          GAME END
+       │             │             │
+       │             │       ┌─────┴─────┐
+       │             │       ▼           ▼
+       │             │     WIN          LOSE
+       │             │       │           │
+       └─────────────┴───────┘           │
+                     │                   │
+                     ▼                   ▼
+               CALL GEMINI          Ragebait again
+                     │
+                     ▼
+              ACTUAL ANSWER]
+**
+
+
+
+## Team Contributions
+- [Anu Ann Biju]: [developing, ui/ux design, frontend]
+- [Adheena Sajeev Nair]: [deploying, backend]
 
 ---
+Made with ❤️ at TinkerHub Useless Projects 
 
-## 🧪 Testing
+![Static Badge](https://img.shields.io/badge/TinkerHub-24?color=%23000000&link=https%3A%2F%2Fwww.tinkerhub.org%2F)
+![Static Badge](https://img.shields.io/badge/UselessProjects--26-26?link=https%3A%2F%2Ftinkerhub.org%2Fevents%2F1M8ORET9A1%2Fuseless-projects-3.0)
 
-Run backend tests:
-```bash
-.\.venv\Scripts\python -m pytest backend\tests -v
-```
 
-Build frontend production bundle:
-```bash
-cd frontend
-npm run build
-```
+
+

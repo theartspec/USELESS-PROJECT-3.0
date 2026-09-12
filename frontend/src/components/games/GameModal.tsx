@@ -149,8 +149,8 @@ export const GameModal: React.FC<GameModalProps> = ({
                 <BubbleShooterGame
                   sessionId={sessionId}
                   challengeId={gameData.challenge_id}
-                  targetScore={gameData.target_score || (isAngry ? 500 : 200)}
-                  timeLimit={gameData.time_limit || (isAngry ? 25 : 30)}
+                  targetScore={gameData.target_score || (isAngry ? 800 : 500)}
+                  timeLimit={gameData.time_limit || (isAngry ? 30 : 45)}
                   isAngry={isAngry}
                   onWin={handleWin}
                   onFail={handleFail}

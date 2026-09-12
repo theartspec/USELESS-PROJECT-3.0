@@ -240,7 +240,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
                   </span>
                   {msg.type === 'answer' && (
                     <span className="badge-verified-answer">
-                      <CheckCircle2 size={13} /> GEMINI 2.5 FLASH VERIFIED ANSWER
+                      <CheckCircle2 size={13} /> GEMINI VERIFIED ANSWER
                     </span>
                   )}
                   {msg.type === 'game' && (
@@ -268,7 +268,13 @@ export const ChatView: React.FC<ChatViewProps> = ({
                       <strong>Vadakkunokki has locked your answer behind a game!</strong>
                     </div>
                     <p className="game-card-desc">
-                      Game: <strong>{msg.game === 'speed_math' ? 'Speed Math Rage (3 Questions)' : 'Tic-Tac-Toe'}</strong>
+                      Game: <strong>{
+                        msg.game === 'speed_math' ? 'Speed Math Rage (3 Questions)' :
+                        msg.game === 'bubble_shooter' ? 'Bubble Shooter' :
+                        msg.game === 'science_quiz' ? 'Science Quiz (3 Questions)' :
+                        msg.game === 'tic_tac_toe' ? 'Tic-Tac-Toe' :
+                        'Arcade Challenge'
+                      }</strong>
                       <br />
                       Win this challenge to compel Vadakkunokki to deliver the full truth.
                     </p>

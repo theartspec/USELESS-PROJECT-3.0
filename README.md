@@ -60,9 +60,6 @@ frontend
 [cd frontend
 npm run dev]
 
-### Project Documentation
-For Software:
-
 # Screenshots (Add at least 3)
 ![<img width="1856" height="986" alt="Home interface" src="https://github.com/user-attachments/assets/f675fabe-00c5-481e-937d-5a3afd8dfa26" />]
 
